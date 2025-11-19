@@ -1,6 +1,7 @@
 INSERT INTO system_rules (rule_name, rule_value) VALUES
 ('max', 4);
 
+
 INSERT INTO job_title (id, job_title) VALUES
 (1, 'Assistant Professor'),
 (2, 'Associate Professor'),
