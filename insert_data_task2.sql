@@ -95,7 +95,8 @@ INSERT INTO employee (id_person, employment_id, salary, manager, id_job, id_depa
 (121, 'IE-4005', 66000, 'Gustav Eriksson', 1, 4),
 (124, 'IE-4006', 74000, 'Gustav Eriksson', 2, 4),
 (125, 'IE-4007', 65000, 'Gustav Eriksson', 1, 4),
-(128, 'IE-4008', 69000, 'Gustav Eriksson', 1, 4);
+(128, 'IE-4008', 69000, 'Gustav Eriksson', 1, 4),
+(122, 'IE-4009', 70000, 'Gustav Eriksson', 1, 4);
 
 UPDATE department SET id_manager = 101 WHERE id = 1;
 UPDATE department SET id_manager = 103 WHERE id = 2;
