@@ -183,4 +183,4 @@ GROUP BY
     "Teacher's Name",
     sp.study_period
 HAVING COUNT(DISTINCT ci.instance_id) > 1    -- here we choose N as 1
-ORDER BY "No of courses" DESC, "Teacher's Name";
+ORDER BY "No of courses" ASC, "Teacher's Name";
