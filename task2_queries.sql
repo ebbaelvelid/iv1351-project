@@ -1,10 +1,10 @@
 -- QUERY 1
 SELECT
-    cl.course_code                        AS "Course Code",
-    ci.instance_id                        AS "Course Instance ID",
-    cl.hp                                 AS "HP",
-    sp.study_period                       AS "Period",
-    ci.num_students                       AS "# Students",
+    cl.course_code AS "Course Code",
+    ci.instance_id AS "Course Instance ID",
+    cl.hp AS "HP",
+    sp.study_period AS "Period",
+    ci.num_students AS "# Students",
 
     SUM(CASE WHEN ta.activity_name = 'Lecture'
              THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
@@ -21,16 +21,13 @@ SELECT
     SUM(CASE WHEN ta.activity_name = 'Others'
              THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Other Overhead Hours",
 
-    
     SUM(CASE WHEN ta.activity_name = 'Administration'
              THEN pa.planned_hours + ta.factor * ci.num_students + 2 * cl.hp
              ELSE 0 END) AS "Admin",
 
-    
     SUM(CASE WHEN ta.activity_name = 'Examination'
              THEN pa.planned_hours + ta.factor * ci.num_students
              ELSE 0 END) AS "Exam",
-
     
     SUM(
         CASE
@@ -44,11 +41,11 @@ SELECT
         END
     ) AS "Total Hours"
 
-FROM course_instance      ci
-JOIN course_layout        cl ON ci.id_layout       = cl.id
-JOIN study_period_ENUM    sp ON ci.study_period_id = sp.study_period_id
-JOIN planned_activity     pa ON ci.instance_id     = pa.instance_id
-JOIN teaching_activity    ta ON pa.id_teaching     = ta.id
+FROM course_instance ci
+JOIN course_layout cl ON ci.id_layout = cl.id
+JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
+JOIN planned_activity pa ON ci.instance_id = pa.instance_id
+JOIN teaching_activity ta ON pa.id_teaching = ta.id
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
 GROUP BY
     cl.course_code,
@@ -62,11 +59,11 @@ ORDER BY
 
 --QUERY 2
 SELECT
-    cl.course_code                               AS "Course Code",
-    ci.instance_id                               AS "Course Instance ID",
-    cl.hp                                        AS "HP",
-    (p.first_name || ' ' || p.last_name)         AS "Teacher's Name",
-    jt.job_title                                 AS "Designation",
+    cl.course_code AS "Course Code",
+    ci.instance_id  AS "Course Instance ID",
+    cl.hp AS "HP",
+    (p.first_name || ' ' || p.last_name) AS "Teacher's Name",
+    jt.job_title AS "Designation",
 
     SUM(CASE WHEN ta.activity_name = 'Lecture'
              THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
@@ -96,15 +93,15 @@ SELECT
     ) AS "Total"
 
 FROM allocations a
-JOIN employee e             ON a.id_person = e.id_person
-JOIN person p               ON e.id_person = p.id
-JOIN job_title jt           ON e.id_job    = jt.id
-JOIN planned_activity pa    ON a.id_teaching = pa.id_teaching
+JOIN employee e ON a.id_person = e.id_person
+JOIN person p ON e.id_person = p.id
+JOIN job_title jt ON e.id_job    = jt.id
+JOIN planned_activity pa ON a.id_teaching = pa.id_teaching
                             AND a.instance_id = pa.instance_id
-JOIN teaching_activity ta   ON pa.id_teaching = ta.id
-JOIN course_instance ci     ON a.instance_id  = ci.instance_id
-JOIN course_layout cl       ON ci.id_layout   = cl.id
-JOIN study_period_ENUM sp   ON ci.study_period_id = sp.study_period_id
+JOIN teaching_activity ta ON pa.id_teaching = ta.id
+JOIN course_instance ci ON a.instance_id  = ci.instance_id
+JOIN course_layout cl ON ci.id_layout   = cl.id
+JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
 GROUP BY
     cl.course_code,
@@ -119,11 +116,11 @@ ORDER BY
 
 --QUERY 3 
 SELECT
-    cl.course_code                               AS "Course Code",
-    ci.instance_id                               AS "Course Instance ID",
-    cl.hp                                        AS "HP",
-    sp.study_period                              AS "Period",
-    (p.first_name || ' ' || p.last_name)         AS "Teacher's Name",
+    cl.course_code AS "Course Code",
+    ci.instance_id AS "Course Instance ID",
+    cl.hp AS "HP",
+    sp.study_period AS "Period",
+    (p.first_name || ' ' || p.last_name) AS "Teacher's Name",
 
     SUM(CASE WHEN ta.activity_name = 'Lecture' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
     SUM(CASE WHEN ta.activity_name = 'Tutorial' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Tutorial Hours",
@@ -146,13 +143,13 @@ SELECT
     ) AS "Total"
 
 FROM allocations a
-JOIN employee e             ON a.id_person = e.id_person
-JOIN person p               ON e.id_person = p.id
-JOIN planned_activity pa    ON a.id_teaching = pa.id_teaching AND a.instance_id = pa.instance_id
-JOIN teaching_activity ta   ON pa.id_teaching = ta.id
-JOIN course_instance ci     ON a.instance_id = ci.instance_id
-JOIN course_layout cl       ON ci.id_layout = cl.id
-JOIN study_period_ENUM sp   ON ci.study_period_id = sp.study_period_id
+JOIN employee e ON a.id_person = e.id_person
+JOIN person p ON e.id_person = p.id
+JOIN planned_activity pa ON a.id_teaching = pa.id_teaching AND a.instance_id = pa.instance_id
+JOIN teaching_activity ta ON pa.id_teaching = ta.id
+JOIN course_instance ci ON a.instance_id = ci.instance_id
+JOIN course_layout cl ON ci.id_layout = cl.id
+JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
 
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
 
@@ -167,14 +164,14 @@ ORDER BY "Teacher's Name", ci.instance_id;
 
  --QUERY 4
 SELECT
-    e.employment_id        AS "Employment ID",
-    (p.first_name || ' ' || p.last_name)  AS "Teacher's Name",
-    sp.study_period        AS "Period",
-    COUNT(DISTINCT ci.instance_id)      AS "No of courses"
-FROM allocations   a 
-JOIN employee   e  ON a.id_person = e.id_person 
-JOIN person   p  ON e.id_person = p.id  
-JOIN course_instance   ci ON a.instance_id  = ci.instance_id  
+    e.employment_id AS "Employment ID",
+    (p.first_name || ' ' || p.last_name) AS "Teacher's Name",
+    sp.study_period AS "Period",
+    COUNT(DISTINCT ci.instance_id) AS "No of courses"
+FROM allocations a 
+JOIN employee e ON a.id_person = e.id_person 
+JOIN person p ON e.id_person = p.id  
+JOIN course_instance ci ON a.instance_id  = ci.instance_id  
 JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id 
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
   
