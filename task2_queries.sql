@@ -152,6 +152,7 @@ JOIN course_layout cl ON ci.id_layout = cl.id
 JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
 
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
+AND e.employment_id = 'CS-1002'   -- we pick one teacher
 
 GROUP BY
     cl.course_code,
@@ -174,7 +175,7 @@ JOIN person p ON e.id_person = p.id
 JOIN course_instance ci ON a.instance_id  = ci.instance_id  
 JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id 
 WHERE ci.study_year = EXTRACT(YEAR FROM CURRENT_DATE)
-  
+  AND sp.study_period = 'P1'      -- for current period, we choose P1 as the current period
 GROUP BY
     e.employment_id, 
     "Teacher's Name",
