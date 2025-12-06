@@ -1,0 +1,56 @@
+QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=28.72..28.87 rows=1 width=244) (actual time=1.384..1.499 rows=11 loops=1)
+   Group Key: cl.course_code, ci.instance_id, sp.study_period
+   Buffers: shared hit=494
+   ->  Sort  (cost=28.72..28.72 rows=1 width=270) (actual time=1.338..1.350 rows=77 loops=1)
+         Sort Key: cl.course_code, ci.instance_id, sp.study_period
+         Sort Method: quicksort  Memory: 30kB
+         Buffers: shared hit=494
+         ->  Nested Loop  (cost=0.61..28.71 rows=1 width=270) (actual time=0.481..1.214 rows=77 loops=1)
+               Buffers: shared hit=491
+               ->  Nested Loop  (cost=0.46..28.05 rows=1 width=188) (actual time=0.453..1.030 rows=77 loops=1)
+                     Buffers: shared hit=337
+                     ->  Nested Loop  (cost=0.31..21.20 rows=1 width=180) (actual time=0.423..0.813 rows=77 loops=1)
+                           Buffers: shared hit=183
+                           ->  Nested Loop  (cost=0.16..14.34 rows=1 width=98) (actual time=0.404..0.611 rows=77 loops=1)
+                                 Buffers: shared hit=29
+                                 ->  Seq Scan on planned_activity pa  (cost=0.00..1.98 rows=98 width=22)
+                                       (actual time=0.020..0.037 rows=98 loops=1)
+                                       Buffers: shared hit=1
+                                 ->  Memoize  (cost=0.16..0.68 rows=1 width=90)
+                                       (actual time=0.005..0.005 rows=0.79 loops=98)
+                                       Cache Key: pa.instance_id
+                                       Cache Mode: logical
+                                       Hits: 84  Misses: 14  Evictions: 0  Overflows: 0
+                                       Memory Usage: 2kB
+                                       Buffers: shared hit=28
+                                       ->  Index Scan using pk_course_instance on course_instance ci
+                                             (cost=0.15..0.67 rows=1 width=90)
+                                             (actual time=0.029..0.029 rows=0.79 loops=14)
+                                             Index Cond: ((instance_id)::text = (pa.instance_id)::text)
+                                             Filter: ((study_year)::numeric = EXTRACT(year FROM CURRENT_DATE))
+                                             Rows Removed by Filter: 0
+                                             Index Searches: 14
+                                             Buffers: shared hit=28
+                           ->  Index Scan using pk_course_layout on course_layout cl
+                                 (cost=0.15..6.83 rows=1 width=90)
+                                 (actual time=0.002..0.002 rows=1 loops=77)
+                                 Index Cond: (id = ci.id_layout)
+                                 Index Searches: 77
+                                 Buffers: shared hit=154
+                     ->  Index Scan using pk_study_period_enum on study_period_enum sp
+                           (cost=0.15..6.84 rows=1 width=16)
+                           (actual time=0.002..0.002 rows=1 loops=77)
+                           Index Cond: (study_period_id = ci.study_period_id)
+                           Index Searches: 77
+                           Buffers: shared hit=154
+               ->  Index Scan using pk_teaching_activity on teaching_activity ta
+                     (cost=0.15..0.66 rows=1 width=90)
+                     (actual time=0.002..0.002 rows=1 loops=77)
+                     Index Cond: (id = pa.id_teaching)
+                     Index Searches: 77
+                     Buffers: shared hit=154
+
+ Planning Time: 2.084 ms
+ Execution Time: 1.670 ms
