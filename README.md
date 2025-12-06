@@ -5,7 +5,7 @@ SQL scripts for implementing the queries.
 Files:
 task2_queries.sql: contains the SQL queries.
 insert_data_task2.sql: contains the updated insert_data file used for task 2.
-EXPLAINANALYZEoutput.txt: contains the output of when we ran EXPLAIN ANALYZE on query 2.
+EXPLAINANALYZEoutput.txt: contains the output of when we ran EXPLAIN ANALYZE on query 1.
 task2_highergrade.sql: contains the optimized queries (implementing materialized view and index).
 
 Authors: Rita Daloul, Linda Chahrstan, Ebba Elvelid
