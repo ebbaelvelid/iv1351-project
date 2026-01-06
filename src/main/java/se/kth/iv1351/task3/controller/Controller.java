@@ -2,6 +2,7 @@ package controller;
 import integration.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Controller {
 
@@ -12,41 +13,23 @@ public class Controller {
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
 
     public void increaseStudents(String instanceId, int delta) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
-
-            int current = courseDAO.findStudentsForUpdate(conn, instanceId);
-            courseDAO.updateStudents(conn, instanceId, current + delta);
-
-            conn.commit();
-            System.out.println("Student count updated.");
-
+        try (Connection conn = DB.getConnection()) {
+            try {
+                int current = courseDAO.findStudentsForUpdate(conn, instanceId);
+                courseDAO.updateStudents(conn, instanceId, current + delta);
+                conn.commit();
+                System.out.println("Student count updated.");
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (Exception rollbackException) {
-                    rollbackException.printStackTrace();
-                }
-            }
             e.printStackTrace();
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception closeException) {
-                    closeException.printStackTrace();
-                }
-            }
         }
     }
 
     public void printCost(String instanceId) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
-
+        try (Connection conn = DB.getConnection()) {
             ResultSet rs = courseDAO.findCourseHeader(conn, instanceId);
             if (!rs.next()) {
                 throw new RuntimeException("Course instance not found");
@@ -62,147 +45,86 @@ public class Controller {
             System.out.println("Course code: " + courseCode);
             System.out.println("Course instance: " + instance);
             System.out.println("Period: " + period);
-            System.out.println("Planned cost: "
-                    + plannedHours * COST_PER_HOUR + " KSEK");
-            System.out.println("Actual cost: "
-                    + actualHours * COST_PER_HOUR + " KSEK");
+            System.out.println("Planned cost: " + plannedHours * COST_PER_HOUR + " KSEK");
+            System.out.println("Actual cost: " + actualHours * COST_PER_HOUR + " KSEK");
 
             conn.rollback();
-
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-
-                }
-            } catch (Exception ignored) {
-            }
         }
     }
 
     public void allocateTeacher(String employmentId, int teachingId, String instanceId, String period) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
-
-            Integer personId = employeeDAO.findPersonIdByEmploymentId(conn, employmentId);
-
-            if (personId == null) {
-                throw new RuntimeException("Employee not found");
-            }
-
-            int count = allocationDAO.countCoursesForTeacherPeriod(conn, employmentId, period);
-
-            if (count >= 4) {
-                throw new RuntimeException("Teacher exceeds max course load");
-            }
-
-            allocationDAO.createAllocation(conn, personId, instanceId, teachingId);
-
-            conn.commit();
-            System.out.println("Allocation successful.");
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (Exception rollbackException) {
-                    rollbackException.printStackTrace();
+        try (Connection conn = DB.getConnection()) {
+            try {
+                Integer personId = employeeDAO.findPersonIdByEmploymentId(conn, employmentId);
+                if (personId == null) {
+                    throw new RuntimeException("Employee not found");
                 }
-            }
-            System.out.println("ERROR: " + e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception closeException) {
-                    closeException.printStackTrace();
+
+                int count = allocationDAO.countCoursesForTeacherPeriod(conn, employmentId, period);
+                if (count >= 4) {
+                    throw new RuntimeException("Teacher exceeds max course load");
                 }
+
+                allocationDAO.createAllocation(conn, personId, instanceId, teachingId);
+                conn.commit();
+                System.out.println("Allocation successful.");
+            } catch (Exception e) {
+                conn.rollback();
+                System.out.println("ERROR: " + e.getMessage());
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
     public void addExerciseActivity(String instanceId, int personId) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
+        try (Connection conn = DB.getConnection()) {
+            try {
+                int activityId = activityDAO.createActivity(conn, "Exercise", 1.0);
+                activityDAO.addToPlannedActivity(conn, activityId, instanceId, 20);
+                allocationDAO.createAllocation(conn, personId, instanceId, activityId);
 
-            int activityId = activityDAO.createActivity(conn, "Exercise", 1.0);
-            activityDAO.addToPlannedActivity(conn, activityId, instanceId, 20);
-            allocationDAO.createAllocation(conn, personId, instanceId, activityId);
-
-            System.out.println("Exercise activity added.");
-
-            conn.commit();
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (Exception rollbackException) {
-                    rollbackException.printStackTrace();
-                }
+                conn.commit();
+                System.out.println("Exercise activity added.");
+            } catch (Exception e) {
+                conn.rollback();
+                System.out.println("ERROR: " + e.getMessage());
             }
-            System.out.println("ERROR: " + e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception closeException) {
-                    closeException.printStackTrace();
-                }
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
     public void deallocateTeacher(String employmentId, int teachingId, String instanceId) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
-
-            String sql = "SELECT id_person FROM employee WHERE employment_id = ?";
-            int personId;
-            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, employmentId);
-                java.sql.ResultSet rs = ps.executeQuery();
-                if (!rs.next()) {
-                    throw new RuntimeException("Employee not found");
+        try (Connection conn = DB.getConnection()) {
+            try {
+                String sql = "SELECT id_person FROM employee WHERE employment_id = ?";
+                int personId;
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, employmentId);
+                    java.sql.ResultSet rs = ps.executeQuery();
+                    if (!rs.next()) {
+                        throw new RuntimeException("Employee not found");
+                    }
+                    personId = rs.getInt("id_person");
                 }
-                personId = rs.getInt("id_person");
-            }
 
-            allocationDAO.deleteAllocation(conn, personId, instanceId, teachingId);
-
-            conn.commit();
-            System.out.println("Deallocation successful.");
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (Exception rollbackException) {
-                    rollbackException.printStackTrace();
-                }
+                allocationDAO.deleteAllocation(conn, personId, instanceId, teachingId);
+                conn.commit();
+                System.out.println("Deallocation successful.");
+            } catch (Exception e) {
+                conn.rollback();
+                System.out.println("ERROR: " + e.getMessage());
             }
-            System.out.println("ERROR: " + e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception closeException) {
-                    closeException.printStackTrace();
-                }
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
     public void displayExerciseAllocation(String instanceId) {
-        Connection conn = null;
-        try {
-            conn = DB.getConnection();
-
+        try (Connection conn = DB.getConnection()) {
             String sql = """
             SELECT
                 cl.course_code,
@@ -240,19 +162,9 @@ public class Controller {
                     System.out.println("No Exercise allocation found.");
                 }
             }
-
             conn.rollback();
-
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-
-                }
-            } catch (Exception ignored) {
-            }
         }
     }
 }
