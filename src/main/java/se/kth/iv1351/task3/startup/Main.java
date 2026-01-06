@@ -1,12 +1,10 @@
 package startup;
-import controller.CourseService;
+import controller.Controller;
 
 public class Main {
 
     public static void main(String[] args) {
-
-        CourseService service = new CourseService();
-
+        Controller service = new Controller();
         String id = "DD1351-2025P1";
         String id2 = "CS-1007";
 
