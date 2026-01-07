@@ -53,3 +53,26 @@ public class AllocationDAO {
             ps.executeUpdate();
         }
     }
+
+    public ResultSet findExerciseAllocationByInstance(Connection conn, String instanceId) throws SQLException {
+        String sql = """
+        SELECT
+            cl.course_code,
+            cl.course_name,
+            ci.instance_id,
+            ta.activity_name,
+            e.employment_id
+        FROM allocations a
+        JOIN employee e ON a.id_person = e.id_person
+        JOIN course_instance ci ON a.instance_id = ci.instance_id
+        JOIN course_layout cl ON ci.id_layout = cl.id
+        JOIN teaching_activity ta ON a.id_teaching = ta.id
+        WHERE ci.instance_id = ?
+          AND ta.activity_name = 'Exercise'
+        """;
+
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, instanceId);
+        return ps.executeQuery();
+    }
+}
