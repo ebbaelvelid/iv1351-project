@@ -100,15 +100,9 @@ public class Controller {
     public void deallocateTeacher(String employmentId, int teachingId, String instanceId) {
         try (Connection conn = DB.getConnection()) {
             try {
-                String sql = "SELECT id_person FROM employee WHERE employment_id = ?";
-                int personId;
-                try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, employmentId);
-                    java.sql.ResultSet rs = ps.executeQuery();
-                    if (!rs.next()) {
-                        throw new RuntimeException("Employee not found");
-                    }
-                    personId = rs.getInt("id_person");
+                Integer personId = employeeDAO.findPersonIdByEmploymentId(conn, employmentId);
+                if (personId == null) {
+                    throw new RuntimeException("Employee not found");
                 }
 
                 allocationDAO.deleteAllocation(conn, personId, instanceId, teachingId);
@@ -125,43 +119,25 @@ public class Controller {
 
     public void displayExerciseAllocation(String instanceId) {
         try (Connection conn = DB.getConnection()) {
-            String sql = """
-            SELECT
-                cl.course_code,
-                cl.course_name,
-                ci.instance_id,
-                ta.activity_name,
-                e.employment_id
-            FROM allocations a
-            JOIN employee e ON a.id_person = e.id_person
-            JOIN course_instance ci ON a.instance_id = ci.instance_id
-            JOIN course_layout cl ON ci.id_layout = cl.id
-            JOIN teaching_activity ta ON a.id_teaching = ta.id
-            WHERE ci.instance_id = ?
-              AND ta.activity_name = 'Exercise'
-            """;
+            ResultSet rs = allocationDAO.findExerciseAllocationByInstance(conn, instanceId);
 
-            try (var ps = conn.prepareStatement(sql)) {
-                ps.setString(1, instanceId);
-                var rs = ps.executeQuery();
+            System.out.println("Exercise allocation for course instance:");
+            boolean found = false;
 
-                System.out.println("Exercise allocation for course instance:");
-                boolean found = false;
-
-                while (rs.next()) {
-                    found = true;
-                    System.out.println(
-                            rs.getString("course_code") + " - "
-                            + rs.getString("course_name") + ", "
-                            + rs.getString("instance_id") + ", Teacher: "
-                            + rs.getString("employment_id")
-                    );
-                }
-
-                if (!found) {
-                    System.out.println("No Exercise allocation found.");
-                }
+            while (rs.next()) {
+                found = true;
+                System.out.println(
+                        rs.getString("course_code") + " - "
+                        + rs.getString("course_name") + ", "
+                        + rs.getString("instance_id") + ", Teacher: "
+                        + rs.getString("employment_id")
+                );
             }
+
+            if (!found) {
+                System.out.println("No Exercise allocation found.");
+            }
+
             conn.rollback();
         } catch (Exception e) {
             e.printStackTrace();
