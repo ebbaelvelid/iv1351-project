@@ -66,28 +66,27 @@ SELECT
     jt.job_title AS "Designation",
 
     SUM(CASE WHEN ta.activity_name = 'Lecture'
-             THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
+             THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
     SUM(CASE WHEN ta.activity_name = 'Tutorial'
-             THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Tutorial Hours",
+             THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Tutorial Hours",
     SUM(CASE WHEN ta.activity_name = 'Lab'
-             THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lab Hours",
+             THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Lab Hours",
     SUM(CASE WHEN ta.activity_name = 'Seminar'
-             THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Seminar Hours",
+             THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Seminar Hours",
     SUM(CASE WHEN ta.activity_name = 'Others'
-             THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Other Overhead Hours",
+             THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Other Overhead Hours",
     SUM(CASE WHEN ta.activity_name = 'Administration'
-             THEN pa.planned_hours + ta.factor * ci.num_students + 2 * cl.hp ELSE 0 END) AS "Admin",
+         THEN a.allocated_hours ELSE 0 END) AS "Admin",
     SUM(CASE WHEN ta.activity_name = 'Examination'
-             THEN pa.planned_hours + ta.factor * ci.num_students ELSE 0 END) AS "Exam",
+            THEN a.allocated_hours ELSE 0 END) AS "Exam",
+
 
     SUM(
         CASE
             WHEN ta.activity_name IN ('Lecture','Tutorial','Lab','Seminar','Others')
-                THEN pa.planned_hours * ta.factor
-            WHEN ta.activity_name = 'Administration'
-                THEN pa.planned_hours + ta.factor * ci.num_students + 2 * cl.hp
-            WHEN ta.activity_name = 'Examination'
-                THEN pa.planned_hours + ta.factor * ci.num_students
+                THEN a.allocated_hours * ta.factor
+            WHEN ta.activity_name IN ('Administration','Examination')
+                THEN a.allocated_hours   
             ELSE 0
         END
     ) AS "Total"
@@ -96,9 +95,7 @@ FROM allocations a
 JOIN employee e ON a.id_person = e.id_person
 JOIN person p ON e.id_person = p.id
 JOIN job_title jt ON e.id_job    = jt.id
-JOIN planned_activity pa ON a.id_teaching = pa.id_teaching
-                            AND a.instance_id = pa.instance_id
-JOIN teaching_activity ta ON pa.id_teaching = ta.id
+JOIN teaching_activity ta ON a.id_teaching = ta.id
 JOIN course_instance ci ON a.instance_id  = ci.instance_id
 JOIN course_layout cl ON ci.id_layout   = cl.id
 JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
@@ -122,22 +119,22 @@ SELECT
     sp.study_period AS "Period",
     (p.first_name || ' ' || p.last_name) AS "Teacher's Name",
 
-    SUM(CASE WHEN ta.activity_name = 'Lecture' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
-    SUM(CASE WHEN ta.activity_name = 'Tutorial' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Tutorial Hours",
-    SUM(CASE WHEN ta.activity_name = 'Lab' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Lab Hours",
-    SUM(CASE WHEN ta.activity_name = 'Seminar' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Seminar Hours",
-    SUM(CASE WHEN ta.activity_name = 'Others' THEN pa.planned_hours * ta.factor ELSE 0 END) AS "Other Overhead Hours",
-    SUM(CASE WHEN ta.activity_name = 'Administration' THEN pa.planned_hours + ta.factor * ci.num_students + 2 * cl.hp ELSE 0 END) AS "Admin",
-    SUM(CASE WHEN ta.activity_name = 'Examination' THEN pa.planned_hours + ta.factor * ci.num_students ELSE 0 END) AS "Exam",
+    SUM(CASE WHEN ta.activity_name = 'Lecture' THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Lecture Hours",
+    SUM(CASE WHEN ta.activity_name = 'Tutorial' THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Tutorial Hours",
+    SUM(CASE WHEN ta.activity_name = 'Lab' THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Lab Hours",
+    SUM(CASE WHEN ta.activity_name = 'Seminar' THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Seminar Hours",
+    SUM(CASE WHEN ta.activity_name = 'Others' THEN a.allocated_hours * ta.factor ELSE 0 END) AS "Other Overhead Hours",
+    SUM(CASE WHEN ta.activity_name = 'Administration'
+         THEN a.allocated_hours ELSE 0 END) AS "Admin",
+    SUM(CASE WHEN ta.activity_name = 'Examination'
+         THEN a.allocated_hours ELSE 0 END) AS "Exam",
 
     SUM(
         CASE
             WHEN ta.activity_name IN ('Lecture','Tutorial','Lab','Seminar','Others')
-                THEN pa.planned_hours * ta.factor
-            WHEN ta.activity_name = 'Administration'
-                THEN pa.planned_hours + ta.factor * ci.num_students + 2 * cl.hp
-            WHEN ta.activity_name = 'Examination'
-                THEN pa.planned_hours + ta.factor * ci.num_students
+                THEN a.allocated_hours * ta.factor
+             WHEN ta.activity_name IN ('Administration','Examination')
+                THEN a.allocated_hours
             ELSE 0
         END
     ) AS "Total"
@@ -145,8 +142,7 @@ SELECT
 FROM allocations a
 JOIN employee e ON a.id_person = e.id_person
 JOIN person p ON e.id_person = p.id
-JOIN planned_activity pa ON a.id_teaching = pa.id_teaching AND a.instance_id = pa.instance_id
-JOIN teaching_activity ta ON pa.id_teaching = ta.id
+JOIN teaching_activity ta ON a.id_teaching = ta.id
 JOIN course_instance ci ON a.instance_id = ci.instance_id
 JOIN course_layout cl ON ci.id_layout = cl.id
 JOIN study_period_ENUM sp ON ci.study_period_id = sp.study_period_id
