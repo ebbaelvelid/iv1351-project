@@ -152,7 +152,8 @@ ALTER TABLE planned_activity ADD CONSTRAINT PK_planned_activity PRIMARY KEY (id_
 CREATE TABLE allocations (
  id_person INT NOT NULL,
  id_teaching INT NOT NULL,
- instance_id   VARCHAR(30) NOT NULL
+ instance_id   VARCHAR(30) NOT NULL,
+ allocated_hours NUMERIC NOT NULL
 );
 
 
@@ -214,6 +215,10 @@ ALTER TABLE person_phone ADD CONSTRAINT FK_person_phone_1 FOREIGN KEY (id_phone)
 
 ALTER TABLE planned_activity ADD CONSTRAINT FK_planned_activity_0 FOREIGN KEY (id_teaching) REFERENCES teaching_activity(id)   ON DELETE CASCADE;
 ALTER TABLE planned_activity ADD CONSTRAINT FK_planned_activity_1 FOREIGN KEY (instance_id  ) REFERENCES course_instance (instance_id  )   ON DELETE CASCADE;
+
+
+ALTER TABLE allocations ADD CONSTRAINT FK_allocations_0 FOREIGN KEY (id_person) REFERENCES employee (id_person)   ON DELETE CASCADE;
+ALTER TABLE allocations ADD CONSTRAINT FK_allocations_1 FOREIGN KEY (id_teaching,instance_id  ) REFERENCES planned_activity (id_teaching,instance_id  )   ON DELETE CASCADE;
 
 
 ALTER TABLE allocations ADD CONSTRAINT FK_allocations_0 FOREIGN KEY (id_person) REFERENCES employee (id_person)   ON DELETE CASCADE;
