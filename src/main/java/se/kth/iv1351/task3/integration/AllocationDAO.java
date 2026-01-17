@@ -1,5 +1,9 @@
 package integration;
+
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import model.AllocationDTO;
 
 public class AllocationDAO {
 
@@ -19,22 +23,24 @@ public class AllocationDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, employmentId);
             ps.setString(2, period);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return rs.getInt("cnt");
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt("cnt");
+            }
         }
     }
 
     public void createAllocation(Connection conn, int personId, String instanceId, int teachingId) throws SQLException {
         String sql
                 = "INSERT INTO allocations "
-                + "(id_person, instance_id, id_teaching) "
-                + "VALUES (?,?,?)";
+                + "(id_person, instance_id, id_teaching, allocated_hours) "
+                + "VALUES (?,?,?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, personId);
             ps.setString(2, instanceId);
             ps.setInt(3, teachingId);
+            ps.setInt(4, 0); // initialize allocated_hours to zero
             ps.executeUpdate();
         }
     }
@@ -53,14 +59,13 @@ public class AllocationDAO {
             ps.executeUpdate();
         }
     }
-
-    public ResultSet findExerciseAllocationByInstance(Connection conn, String instanceId) throws SQLException {
+    
+    public List<AllocationDTO> readExerciseAllocationsByInstance(Connection conn, String instanceId) throws SQLException {
         String sql = """
         SELECT
             cl.course_code,
             cl.course_name,
             ci.instance_id,
-            ta.activity_name,
             e.employment_id
         FROM allocations a
         JOIN employee e ON a.id_person = e.id_person
@@ -71,8 +76,20 @@ public class AllocationDAO {
           AND ta.activity_name = 'Exercise'
         """;
 
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setString(1, instanceId);
-        return ps.executeQuery();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, instanceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<AllocationDTO> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(new AllocationDTO(
+                            rs.getString("course_code"),
+                            rs.getString("course_name"),
+                            rs.getString("instance_id"),
+                            rs.getString("employment_id")
+                    ));
+                }
+                return list;
+            }
+        }
     }
 }
